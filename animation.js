@@ -8,7 +8,7 @@ export class Timeline {
             let animations = this.animations.filter(animation => !animation.finished);
             for (let animation of this.animations) {
 
-                let { object, property, template, start, end, duration, timingFunction, delay, addTime } = animation;
+                let { object, property, template, duration, timingFunction, delay, addTime } = animation;
 
                 let progression = timingFunction((t - delay - addTime) / duration) // 0-1之间的数(比分比)
 
@@ -17,7 +17,7 @@ export class Timeline {
                     animation.finished = true;
                 }
 
-                let value = start + progression * (end - start); // value就是根据progression算出的当前值
+                let value = animation.valueFromProgression(progression);
 
                 object[property] = template(value);
             }
@@ -65,6 +65,7 @@ export class Timeline {
     }
 
     add(animation, addTime) {
+        console.log(animation, 'animation');
         this.animations.push(animation);
         animation.finished = false;
         if (this.state === "playing")
@@ -73,9 +74,8 @@ export class Timeline {
             animation.addTime = addTime !== void 0 ? addTime : 0;
     }
 }
-
 export class Animation {
-    constructor(object, property, template, start, end, duration, delay, timingFunction) {
+    constructor(object, property, start, end, duration, delay, timingFunction, template) {
         this.object = object;
         this.template = template;
         this.property = property;
@@ -85,6 +85,30 @@ export class Animation {
         this.delay = delay || 0;
         this.timingFunction = timingFunction;
         // ease linear easeIn easeOut
+    }
+    valueFromProgression(progression) { // 根据progression算出的当前值
+        return this.start + progression * (this.end - this.start);
+    }
+}
+export class ColorAnimation {
+    constructor(object, property, start, end, duration, delay, timingFunction, template) {
+        this.object = object;
+        this.template = template || (v => `rgba(${v.r},${v.g},${v.b},${v.a})`);
+        this.property = property;
+        this.start = start;
+        this.end = end;
+        this.duration = duration;
+        this.delay = delay || 0;
+        this.timingFunction = timingFunction;
+        // ease linear easeIn easeOut
+    }
+    valueFromProgression(progression) { // 根据progression算出的当前值
+        return {
+            r: this.start.r + progression * (this.end.r - this.start.r),
+            g: this.start.g + progression * (this.end.g - this.start.g),
+            b: this.start.b + progression * (this.end.b - this.start.b),
+            a: this.start.a + progression * (this.end.a - this.start.a),
+        }
     }
 }
 
