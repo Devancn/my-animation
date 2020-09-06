@@ -8,11 +8,11 @@ export class Timeline {
             let animations = this.animations.filter(animation => !animation.finished);
             for (let animation of this.animations) {
 
-                let { object, property, template, start, end, duration, timingFunction, delay, startTime } = animation;
+                let { object, property, template, start, end, duration, timingFunction, delay, addTime } = animation;
 
-                let progression = timingFunction((t - delay - startTime) / duration) // 0-1之间的数(比分比)
+                let progression = timingFunction((t - delay - addTime) / duration) // 0-1之间的数(比分比)
 
-                if (t > duration + delay + startTime) {
+                if (t > duration + delay + addTime) {
                     progression = 1;
                     animation.finished = true;
                 }
@@ -64,13 +64,13 @@ export class Timeline {
         this.tick();
     }
 
-    add(animation, startTime) {
+    add(animation, addTime) {
         this.animations.push(animation);
         animation.finished = false;
         if (this.state === "playing")
-            animation.startTime = startTime !== void 0 ? startTime : Date.now() - this.startTime;
+            animation.addTime = addTime !== void 0 ? addTime : Date.now() - this.startTime;
         else
-            animation.startTime = startTime !== void 0 ? startTime : 0;
+            animation.addTime = addTime !== void 0 ? addTime : 0;
     }
 }
 
