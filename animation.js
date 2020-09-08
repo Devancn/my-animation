@@ -10,6 +10,9 @@ export class Timeline {
 
                 let { object, property, template, duration, timingFunction, delay, addTime } = animation;
 
+                if (t < delay + addTime)
+                    continue;
+
                 let progression = timingFunction((t - delay - addTime) / duration) // 0-1之间的数(比分比)
 
                 if (t > duration + delay + addTime) {
