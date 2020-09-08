@@ -1,13 +1,17 @@
 export class Timeline {
     constructor() {
         this.animations = new Set();
+        this.finishedAnimations = new Set();
+        this.addTimes = new Map();
         this.requestID = null;
         this.state = "inited";
         this.tick = () => {
             let t = Date.now() - this.startTime;
             for (let animation of this.animations) {
 
-                let { object, property, template, duration, timingFunction, delay, addTime } = animation;
+                let { object, property, template, duration, timingFunction, delay } = animation;
+
+                let addTime = this.addTimes.get(animation);
 
                 if (t < delay + addTime)
                     continue;
@@ -16,7 +20,8 @@ export class Timeline {
 
                 if (t > duration + delay + addTime) {
                     progression = 1;
-                    this.animations.delete(animation)
+                    this.animations.delete(animation);
+                    this.finishedAnimations.add(animation);
                 }
 
                 let value = animation.valueFromProgression(progression);
@@ -37,6 +42,7 @@ export class Timeline {
         this.pauseTime = Date.now();
         if (this.requestID !== null) {
             cancelAnimationFrame(this.requestID)
+            this.requestID = null;
         }
     }
 
@@ -56,10 +62,26 @@ export class Timeline {
         this.tick();
     }
 
+    reset() {
+        if (this.state === "playing")
+            this.pause();
+        this.animations = new Set;
+        this.finishedAnimations = new Set();
+        this.addTimes = new Map();
+        this.requestID = null;
+        this.state = "playing";
+        this.startTime = Date.now();
+        this.pauseTime = null;
+        this.state = "inited"
+    }
+
     restart() {
         if (this.state === "playing")
             this.pause();
-        this.animations = [];
+        for (let animation of this.finishedAnimations)
+            this.animations.add(animation);
+
+        this.finishedAnimations = new Set();
         this.requestID = null;
         this.state = "playing";
         this.startTime = Date.now();
@@ -70,12 +92,12 @@ export class Timeline {
     add(animation, addTime) {
         this.animations.add(animation);
         if (this.state === "playing" && this.requestID === null)
-            this.requestID = requestAnimationFrame(this.tick)
+            this.tick();
 
         if (this.state === "playing")
-            animation.addTime = addTime !== void 0 ? addTime : Date.now() - this.startTime;
+            this.addTimes.set(animation, addTime !== void 0 ? addTime : Date.now() - this.startTime);
         else
-            animation.addTime = addTime !== void 0 ? addTime : 0;
+            this.addTimes.set(addTime !== void 0 ? addTime : 0);
     }
 }
 export class Animation {
