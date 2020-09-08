@@ -1,11 +1,10 @@
 export class Timeline {
     constructor() {
-        this.animations = [];
+        this.animations = new Set();
         this.requestID = null;
         this.state = "inited";
         this.tick = () => {
             let t = Date.now() - this.startTime;
-            let animations = this.animations.filter(animation => !animation.finished);
             for (let animation of this.animations) {
 
                 let { object, property, template, duration, timingFunction, delay, addTime } = animation;
@@ -17,16 +16,17 @@ export class Timeline {
 
                 if (t > duration + delay + addTime) {
                     progression = 1;
-                    animation.finished = true;
+                    this.animations.delete(animation)
                 }
 
                 let value = animation.valueFromProgression(progression);
 
                 object[property] = template(value);
             }
-            if (animations.length)
+            if (this.animations.size)
                 this.requestID = requestAnimationFrame(this.tick)
-
+            else
+                this.requestID = null;
         }
     }
 
@@ -68,9 +68,10 @@ export class Timeline {
     }
 
     add(animation, addTime) {
-        console.log(animation, 'animation');
-        this.animations.push(animation);
-        animation.finished = false;
+        this.animations.add(animation);
+        if (this.state === "playing" && this.requestID === null)
+            this.requestID = requestAnimationFrame(this.tick)
+
         if (this.state === "playing")
             animation.addTime = addTime !== void 0 ? addTime : Date.now() - this.startTime;
         else
